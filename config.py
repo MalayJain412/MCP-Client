@@ -14,5 +14,7 @@ try:
     logging.info(f"\n\nAzure OpenAI Endpoint: {AZURE_OPENAI_ENDPOINT}")
     logging.info(f"\n\nAzure OpenAI Deployment: {AZURE_DEPLOYMENT}")
 except Exception as e:
-    logging.error("Error loading configuration from environment variables", exc_info=True)
+    logging.error("Error loading Azure OpenAI configuration from environment variables", exc_info=True)
     raise e
+
+ADMIN_TOKEN = os.getenv("ADMIN_TOKEN")

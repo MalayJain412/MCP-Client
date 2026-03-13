@@ -1,113 +1,340 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FastAPI Chatbot</title>
+
+    <title>FastAPI MCP Chat</title>
+
     <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        /* Custom scrollbar for a cleaner look */
-        .chat-container::-webkit-scrollbar { width: 6px; }
-        .chat-container::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
-    </style>
     <script src="./config.js"></script>
+
+    <style>
+        .chat-container::-webkit-scrollbar {
+            width: 6px
+        }
+
+        .chat-container::-webkit-scrollbar-thumb {
+            background: #e2e8f0;
+            border-radius: 10px
+        }
+    </style>
+
 </head>
+
 <body class="bg-slate-50 h-screen flex flex-col items-center justify-center p-4">
 
+    <!-- CHAT CARD -->
     <div class="w-full max-w-2xl bg-white rounded-2xl shadow-xl flex flex-col overflow-hidden h-[80vh]">
-        <div class="bg-indigo-600 p-4 text-white font-semibold text-center shadow-md">
-            FastAPI Chat Assistant
+
+        <div class="bg-indigo-600 p-4 text-white font-semibold flex justify-between items-center shadow-md">
+
+            <span>FastAPI MCP Chat Assistant</span>
+
+            <button id="admin-btn"
+                class="bg-white text-indigo-600 px-3 py-1 rounded-full font-bold hover:bg-indigo-100">
+                +
+            </button>
+
         </div>
 
         <div id="chat-window" class="chat-container flex-1 overflow-y-auto p-6 space-y-4">
+
             <div class="flex justify-start">
                 <div class="bg-slate-100 text-slate-800 rounded-2xl px-4 py-2 max-w-[80%]">
                     Hello! How can I help you today?
                 </div>
             </div>
+
         </div>
 
         <form id="chat-form" class="p-4 border-t border-slate-100 flex gap-2">
-            <input 
-                type="text" 
-                id="user-input" 
-                placeholder="Type your message..." 
+
+            <input type="text" id="user-input" placeholder="Type your message..."
                 class="flex-1 border border-slate-200 rounded-full px-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                required
-            >
-            <button 
-                type="submit" 
-                class="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2 rounded-full transition-colors font-medium"
-            >
+                required>
+
+            <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2 rounded-full">
                 Send
             </button>
+
         </form>
+
     </div>
 
-    <script>
-        const chatForm = document.getElementById('chat-form');
-        const userInput = document.getElementById('user-input');
-        const chatWindow = document.getElementById('chat-window');
 
-        // Function to add messages to the UI
+
+    <!-- TOKEN MODAL -->
+
+    <div id="token-modal" class="fixed inset-0 bg-black/40 hidden items-center justify-center">
+
+        <div class="bg-white w-[350px] rounded-xl p-6 shadow-lg">
+
+            <h2 class="font-semibold mb-4">Admin Access</h2>
+
+            <input id="admin-token-input" type="password" placeholder="Enter admin token"
+                class="w-full border rounded-lg px-3 py-2 mb-4" />
+
+            <div class="flex justify-end gap-2">
+
+                <button id="cancel-token" class="text-gray-500">
+                    Cancel
+                </button>
+
+                <button id="submit-token" class="bg-indigo-600 text-white px-4 py-2 rounded-lg">
+                    Enter
+                </button>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+
+    <!-- SERVER EDITOR MODAL -->
+
+    <div id="admin-modal" class="fixed inset-0 bg-black/40 hidden items-center justify-center">
+
+        <div class="bg-white w-[1000px] max-w-[95%] h-[70vh] rounded-xl shadow-xl flex flex-col">
+
+            <div class="flex justify-between items-center p-4 border-b">
+
+                <span class="font-semibold">Edit servers.py</span>
+
+                <button id="close-admin" class="text-red-500 font-bold">
+                    Close
+                </button>
+
+            </div>
+
+            <textarea id="server-editor" class="flex-1 p-4 font-mono text-sm outline-none resize-none overflow-auto">
+</textarea>
+
+            <div class="p-4 border-t flex justify-end">
+
+                <button id="save-server" class="bg-indigo-600 text-white px-4 py-2 rounded-lg">
+                    Save & Restart
+                </button>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+
+    <script>
+
+        /* ======================
+           CHAT LOGIC
+        ====================== */
+
+        const chatForm = document.getElementById("chat-form")
+        const userInput = document.getElementById("user-input")
+        const chatWindow = document.getElementById("chat-window")
+
         function addMessage(text, isUser = false) {
-            const wrapper = document.createElement('div');
-            wrapper.className = isUser ? "flex justify-end" : "flex justify-start";
-            
-            const bubble = document.createElement('div');
-            bubble.className = isUser 
-                ? "bg-indigo-600 text-white rounded-2xl px-4 py-2 max-w-[80%]" 
-                : "bg-slate-100 text-slate-800 rounded-2xl px-4 py-2 max-w-[80%]";
-            
-            bubble.textContent = text;
-            wrapper.appendChild(bubble);
-            chatWindow.appendChild(wrapper);
-            
-            // Auto-scroll to bottom
-            chatWindow.scrollTop = chatWindow.scrollHeight;
+
+            const wrapper = document.createElement("div")
+            wrapper.className = isUser ? "flex justify-end" : "flex justify-start"
+
+            const bubble = document.createElement("div")
+
+            bubble.className = isUser
+                ? "bg-indigo-600 text-white rounded-2xl px-4 py-2 max-w-[80%]"
+                : "bg-slate-100 text-slate-800 rounded-2xl px-4 py-2 max-w-[80%]"
+
+            bubble.textContent = text
+            wrapper.appendChild(bubble)
+
+            chatWindow.appendChild(wrapper)
+            chatWindow.scrollTop = chatWindow.scrollHeight
+
         }
 
-        chatForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
+        chatForm.addEventListener("submit", async (e) => {
 
-            const message = userInput.value.trim();
-            if (!message) return;
+            e.preventDefault()
 
-            addMessage(message, true);
-            userInput.value = '';
+            const message = userInput.value.trim()
+            if (!message) return
 
-            const loading = document.createElement("div");
-            loading.className = "flex justify-start";
-            loading.innerHTML = `
-                <div class="bg-slate-100 text-slate-500 rounded-2xl px-4 py-2 max-w-[80%]">
-                    Thinking...
-                </div>`;
-            chatWindow.appendChild(loading);
-            chatWindow.scrollTop = chatWindow.scrollHeight;
+            addMessage(message, true)
+            userInput.value = ""
+
+            const loading = document.createElement("div")
+            loading.className = "flex justify-start"
+            loading.innerHTML = `<div class="bg-slate-100 text-slate-500 rounded-2xl px-4 py-2 max-w-[80%]">Thinking...</div>`
+
+            chatWindow.appendChild(loading)
 
             try {
 
-                // const response = await fetch("http://127.0.0.1:8000/chat", 
-                const response = await fetch(`${SERVER_URL}/chat`,
-                {
+                const url = window.SERVER_URL
+
+                const res = await fetch(`${url}/chat`, {
                     method: "POST",
-                    headers: {"Content-Type": "application/json"},
-                    body: JSON.stringify({message})
-                });
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ message })
+                })
 
-                if (!response.ok) throw new Error("Server error");
+                const data = await res.json()
 
-                const data = await response.json();
-
-                loading.remove();
-                addMessage(data.reply);
+                loading.remove()
+                addMessage(data.reply)
 
             } catch (err) {
-                loading.remove();
-                addMessage("Server connection failed.");
-                console.error(err);
+
+                loading.remove()
+                addMessage("Server connection failed.")
+
             }
-        });
+
+        })
+
+
+
+        /* ======================
+           ADMIN PANEL
+        ====================== */
+
+        const adminBtn = document.getElementById("admin-btn")
+
+        const tokenModal = document.getElementById("token-modal")
+        const tokenInput = document.getElementById("admin-token-input")
+        const submitToken = document.getElementById("submit-token")
+        const cancelToken = document.getElementById("cancel-token")
+
+        const adminModal = document.getElementById("admin-modal")
+        const closeAdmin = document.getElementById("close-admin")
+
+        const editor = document.getElementById("server-editor")
+        const saveBtn = document.getElementById("save-server")
+
+        let adminToken = null
+        const url = window.SERVER_URL
+
+
+
+        function openTokenModal() {
+
+            tokenModal.classList.remove("hidden")
+            tokenModal.classList.add("flex")
+
+            setTimeout(() => tokenInput.focus(), 100)
+
+        }
+
+        adminBtn.onclick = openTokenModal
+
+
+
+        cancelToken.onclick = () => {
+
+            tokenModal.classList.add("hidden")
+
+        }
+
+
+
+        async function authenticateAdmin() {
+
+            adminToken = tokenInput.value.trim()
+
+            if (!adminToken) {
+                alert("Token required")
+                return
+            }
+
+            tokenModal.classList.add("hidden")
+
+            try {
+
+                const res = await fetch(`${url}/admin/server-file`, {
+                    method: "GET",
+                    headers: {
+                        "x-admin-token": adminToken
+                    }
+                })
+
+                if (!res.ok) throw new Error("Unauthorized")
+
+                const data = await res.json()
+
+                editor.value = data.content
+
+                adminModal.classList.remove("hidden")
+                adminModal.classList.add("flex")
+
+            } catch (err) {
+
+                alert("Invalid admin token")
+
+            }
+
+        }
+
+        submitToken.onclick = authenticateAdmin
+
+
+
+        tokenInput.addEventListener("keydown", function (event) {
+
+            if (event.key === "Enter") {
+                authenticateAdmin()
+            }
+
+        })
+
+
+
+        closeAdmin.onclick = () => {
+
+            adminModal.classList.add("hidden")
+
+        }
+
+
+
+        saveBtn.onclick = async () => {
+
+            try {
+
+                const res = await fetch(`${url}/admin/server-file`, {
+
+                    method: "POST",
+
+                    headers: {
+                        "Content-Type": "application/json",
+                        "x-admin-token": adminToken
+                    },
+
+                    body: JSON.stringify({
+                        content: editor.value
+                    })
+
+                })
+
+                const data = await res.json()
+
+                alert(data.message || "Server updated")
+
+                adminModal.classList.add("hidden")
+
+            } catch (err) {
+
+                alert("Update failed")
+
+            }
+
+        }
+
     </script>
+
 </body>
+
 </html>
