@@ -10,3 +10,4 @@ wheels/
 .venv
 .env
 servers.py
+copilot-instructions.md
