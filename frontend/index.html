@@ -304,9 +304,8 @@
 
             try {
 
-                // const response = await fetch("http://127.0.0.1:8000/chat", 
-                const response = await fetch(`${SERVER_URL}/chat`,
-                {
+                const res = await fetch(`${url}/admin/server-file`, {
+
                     method: "POST",
 
                     headers: {
