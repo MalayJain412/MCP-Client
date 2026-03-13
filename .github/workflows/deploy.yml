@@ -27,7 +27,7 @@ jobs:
               curl -Ls https://astral.sh/uv/install.sh | sh
               export PATH="$HOME/.local/bin:$PATH"
             fi
-            
+
             APP_DIR="/home/azureuser/projects/MCP-Client"
             REPO_URL="git@github.com:MalayJain412/MCP-Client.git"
             VENV="$APP_DIR/.venv"
@@ -66,7 +66,7 @@ jobs:
             uv sync
 
             echo "---- Restart service ----"
-            pm2 restart "$PM2_NAME" || pm2 start "$VENV/bin/uvicorn" --name "$PM2_NAME" -- app:app --host 0.0.0.0 --port 8013
+            pm2 restart "$PM2_NAME" || pm2 start "$VENV/bin/python" --name mcp-client -- -m uvicorn app:app --host 0.0.0.0 --port 8013
 
             echo "---- Save PM2 state ----"
             pm2 save
