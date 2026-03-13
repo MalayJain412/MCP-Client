@@ -1,0 +1,68 @@
+name: Deploy MCP Client
+
+on:
+  push:
+    branches: ["prod"]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-24.04
+
+
+    steps:
+      - name: Checkout (for workflow context only)
+        uses: actions/checkout@v4
+
+      - name: Deploy to VM
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VM_HOST }}
+          username: ${{ secrets.VM_USER }}
+          key: ${{ secrets.VM_SSH_KEY }}
+          script: |
+            set -e
+
+            APP_DIR="/home/azureuser/projects/MCP-Client"
+            REPO_URL="git@github.com:MalayJain412/MCP-Client.git"
+            VENV="$APP_DIR/.venv"
+            PM2_NAME="mcp-client"
+
+            echo "---- Preparing SSH for GitHub ----"
+            mkdir -p ~/.ssh
+            ssh-keyscan github.com >> ~/.ssh/known_hosts
+
+            echo "---- Ensure app directory exists ----"
+            if [ ! -d "$APP_DIR" ]; then
+              mkdir -p "$APP_DIR"
+            fi
+
+            echo "---- Clone repo if missing ----"
+            if [ ! -d "$APP_DIR/.git" ]; then
+              git clone "$REPO_URL" "$APP_DIR"
+            fi
+
+            cd "$APP_DIR"
+
+            echo "---- Pull latest code ----"
+            git fetch origin
+            git checkout prod
+            git pull origin prod
+
+            echo "---- Create venv if missing ----"
+            if [ ! -d "$VENV" ]; then
+              uv venv "$VENV"
+            fi
+
+            echo "---- Activate venv ----"
+            source "$VENV/bin/activate"
+
+            echo "---- Install dependencies ----"
+            uv sync
+
+            echo "---- Restart service ----"
+            pm2 restart "$PM2_NAME" || pm2 start "$VENV/bin/uvicorn" --name "$PM2_NAME" -- app:app --host 0.0.0.0 --port 8013
+
+            echo "---- Save PM2 state ----"
+            pm2 save
+
+            echo "---- Deployment finished ----"
